@@ -1,0 +1,60 @@
+#!/usr/bin/perl -W
+use strict;
+
+use FileHandle;
+
+sub handle_event
+{
+    my ($event, $conn, $data)=@_;
+    if($event eq "RECEIVED")
+    {
+        print "SEND $conn $data\n";
+        if($data eq "exit" || $data eq "quit" || $data eq "bye")
+        {
+            print "SHUTDOWN $conn\n";
+        }
+    }
+    elsif($event eq "CLOSING")
+    {
+        print "SHUTDOWN $conn\n";
+    }
+}
+
+STDOUT->autoflush(1);
+my $line;
+my ($event, $handle, $data);
+my ($good_line, $good_data);
+while($line=<STDIN>)
+{
+    $good_line=0;
+    $good_data=0;
+    if($line=~/^([A-Z]+) ([0-9]+)$/)
+    {
+        $good_line=1; }
+    elsif($line=~/^([A-Z]+) ([0-9]+) (.*)$/)
+    {
+        chomp($line);
+        $event=$1;
+        $handle=$2;
+        $data=$3;
+        $good_line=1;
+        $good_data=1;
+    }
+    if($good_line)
+    {
+        chomp($line);
+        $event=$1;
+        $handle=$2;
+        $good_line=1;
+        #print("\$line=\"$line\"\n");
+        #print("\$event=\"$event\"\n");
+        #print("\$handle=\"$handle\"\n");
+        if($good_data)
+        {
+            $data=$3;
+            $data=~s/\r//g;
+            #print("\$data=\"$data\"\n");
+        }
+        &handle_event($event, $handle, $data);
+    }
+}
